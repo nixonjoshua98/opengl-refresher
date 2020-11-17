@@ -2,23 +2,15 @@
 #include "Shader.h"
 
 #include <iostream>
-#include <fstream>
-#include <sstream>
 
 #include <GL/glew.h>
 
 #include <glm/gtc/type_ptr.hpp>
 
 
-Shader::Shader()
+Shader::Shader() : m_RendererID(0)
 {
-}
 
-Shader::Shader(const std::string& filepath) : m_RendererID(0)
-{
-    ShaderProgramSource source = ParseShader(filepath);
-
-    m_RendererID = CreateShader(source.VertexSource, source.FragmentSource);
 }
 
 Shader::~Shader()
@@ -26,14 +18,14 @@ Shader::~Shader()
     glDeleteProgram(m_RendererID);
 }
 
-void Shader::Bind() const
+void Shader::Use() const
 {
     glUseProgram(m_RendererID);
 }
 
-void Shader::Unbind() const
+void Shader::Compile(const std::string& vertex, const std::string& fragment)
 {
-    glUseProgram(0);
+    m_RendererID = CreateShader(vertex, fragment);
 }
 
 
@@ -64,13 +56,12 @@ unsigned int Shader::CompileShader(unsigned int type, const std::string& source)
 {
     unsigned int shader = glCreateShader(type);
 
-    const char* src = source.c_str();  // Raw pointer
+    const char* src = source.c_str();
 
     glShaderSource(shader, 1, &src, nullptr);
 
     glCompileShader(shader);
 
-    // Validate compilatation
     int result;
 
     glGetShaderiv(shader, GL_COMPILE_STATUS, &result);
@@ -94,40 +85,6 @@ unsigned int Shader::CompileShader(unsigned int type, const std::string& source)
     }
 
     return shader;
-}
-
-
-ShaderProgramSource Shader::ParseShader(const std::string& filepath)
-{
-    enum class ShaderType { NONE = -1, VERTEX = 0, FRAGMENT = 1 };
-
-    std::fstream stream(filepath);
-
-    std::string line;
-
-    std::stringstream ss[2];
-
-    ShaderType type = ShaderType::NONE;
-
-    while (getline(stream, line))
-    {
-        if (line.find("#shader") != std::string::npos)
-        {
-            // Set shader to vertex
-            if (line.find("vertex") != std::string::npos)
-                type = ShaderType::VERTEX;
-
-            // Set shader to fragment
-            else if (line.find("fragment") != std::string::npos)
-                type = ShaderType::FRAGMENT;
-        }
-        else
-        {
-            ss[(int)type] << line << "\n";
-        }
-    }
-
-    return { ss[0].str(), ss[1].str() };
 }
 
 
@@ -157,7 +114,7 @@ unsigned int Shader::GetUniformLocation(const std::string& name)
     if (m_LocationCache.find(name) != m_LocationCache.end())
         return m_LocationCache[name];
 
-	int location = glGetUniformLocation(m_RendererID, name.c_str());
+    int location = glGetUniformLocation(m_RendererID, name.c_str());
 
     if (location == -1)
         std::cout << "Warning: Uniform '" << name << "' does not exist" << std::endl;

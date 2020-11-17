@@ -15,7 +15,6 @@ Camera::Camera(glm::vec3 position, glm::vec3 up)
 
     Yaw = -90.0f;
     Pitch = 0.0f;
-    Zoom = 45.0f;
 
     UpdateCameraVectors();
 }
@@ -55,17 +54,6 @@ void Camera::ProcessMouseMovement(float xOffset, float yOffset)
     Pitch = std::max(-89.0f, std::min(Pitch, 89.0f));
 
     UpdateCameraVectors();
-}
-
-void Camera::ProcessMouseScroll(float yoffset)
-{
-    Zoom -= (float)yoffset;
-
-    if (Zoom < 1.0f)
-        Zoom = 1.0f;
-
-    if (Zoom > 45.0f)
-        Zoom = 45.0f;
 }
 
 void Camera::UpdateCameraVectors()

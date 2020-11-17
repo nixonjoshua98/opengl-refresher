@@ -4,7 +4,6 @@
 #include <GLFW/glfw3.h>
 
 #include "VertexArray.h"
-#include "IndexBuffer.h"
 #include "Shader.h"
 
 
@@ -13,5 +12,5 @@ class Renderer
 public:
 	void Clear() const;
 
-	void Draw(const VertexArray& VAO, const IndexBuffer& IBO, const Shader& shader) const;
+	void DrawCube(VertexArray* VAO, Shader* shader) const;
 };

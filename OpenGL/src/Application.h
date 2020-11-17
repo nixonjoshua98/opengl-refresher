@@ -5,13 +5,10 @@
 
 #include <vector>
 
-#include "Shader.h"
 #include "Renderer.h"
+#include "Entity.h"
 
-#include "IndexBuffer.h"
 #include "VertexArray.h"
-
-struct GameObject;
 
 
 class Application
@@ -25,22 +22,22 @@ public:
 private:
 	GLFWwindow* window;
 
+	std::vector<Entity> m_Entities;
+
 	Renderer m_Renderer;
 
-	std::vector<GameObject> m_Objects;
-	std::vector<Shader> m_Shaders;
-
-	IndexBuffer* m_IBO;
 	VertexArray* m_VAO;	
-
-	void Input();
-
-	void OnRender();
 
 	int Initialize();
 
 	int Init_OpenGl();
 
 	int CreateWindow();
+
+	void LoadResources();
+
+	void Input();
+
+	void Render();
 };
 

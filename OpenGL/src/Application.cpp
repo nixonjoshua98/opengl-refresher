@@ -7,15 +7,12 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include "Shader.h"
-#include "Texture.h"
-#include "Renderer.h"
-
 #include "Camera.h"
 
-#include "IndexBuffer.h"
 #include "VertexArray.h"
 #include "VertexBuffer.h"
+
+#include "ResourceCache.h"
 
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 
@@ -23,31 +20,14 @@ float lastX = 800 / 2.0f;
 float lastY = 600 / 2.0f;
 bool firstMouse = true;
 
-class GameObject
-{
-private:
-    glm::mat4 m_Model;
-
-public:
-    Texture* texture;
-
-    GameObject(const std::string& textureFile) : m_Model(0)
-    {
-        texture = new Texture(textureFile);
-
-        m_Model = glm::mat4(1.0f);
-    }
-
-    glm::mat4 GetModelMatrix() { return m_Model; }
-};
-
+float deltaTime = 0.0f;
 
 void FrameBufferSizeCallback(GLFWwindow* window, int width, int height)
 {
     glViewport(0, 0, width, height);
 }
 
-void mouse_callback(GLFWwindow* window, double xpos, double ypos)
+void MouseCallback(GLFWwindow* window, double xpos, double ypos)
 {
     if (firstMouse)
     {
@@ -65,17 +45,13 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
     camera.ProcessMouseMovement(xoffset, yoffset);
 }
 
-// glfw: whenever the mouse scroll wheel scrolls, this callback is called
-// ----------------------------------------------------------------------
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
-{
-    camera.ProcessMouseScroll(yoffset);
-}
-
-
 Application::Application() : window(0)
 {
+    m_Entities = std::vector<Entity>();
+
     Initialize();
+
+    LoadResources();
 }
 
 Application::~Application()
@@ -83,46 +59,60 @@ Application::~Application()
 
 }
 
+void Application::LoadResources()
+{
+    ResourceCache::LoadShader("s_Basic", "res/shaders/Shader.shader");
+
+    ResourceCache::LoadTexture("t_Basic", "res/textures/wall.jpg");
+}
+
 int Application::Run()
 {
     float vertices[] = {
-        -0.5f,  0.5f,  0.5f,    0.0f, 1.0f,
-         0.5f,  0.5f,  0.5f,    1.0f, 1.0f,
-         0.5f, -0.5f,  0.5f,    1.0f, 0.0f,
-        -0.5f,  -0.5f, 0.5f,    0.0f, 0.0f,
-        
-        -0.5f,  0.5f,  -0.5f,    0.0f, 1.0f,
-         0.5f,  0.5f,  -0.5f,    1.0f, 1.0f,
-         0.5f, -0.5f,  -0.5f,    1.0f, 0.0f,
-        -0.5f,  -0.5f, -0.5f,    0.0f, 0.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+         0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+         0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+         0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+         0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+         0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+         0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
     };
 
-    unsigned int indices[] = {
-        0, 1, 2,    0, 2, 3,
-
-        4, 5, 6,    4, 6, 7,
-    };    
-
-    // Create shader
-    Shader coreShader("res/shaders/Shader.shader");
-
-    m_Shaders.push_back(coreShader);
-
-    coreShader.Bind();
-
-    // Create object
-    GameObject object("res/textures/image.png");
-
-    m_Objects.push_back(object);
-
-    object.texture->Bind();
-    // --
-
     VertexBuffer VBO(vertices, sizeof(vertices));
-
-    m_IBO = new IndexBuffer(indices, sizeof(indices) / sizeof(unsigned int));
-    
-    coreShader.SetUniform1i("u_Texture", 0);
 
     VertexBufferLayout layout;
 
@@ -135,17 +125,31 @@ int Application::Run()
 
     glfwSetFramebufferSizeCallback(window, FrameBufferSizeCallback);
 
-    glfwSetCursorPosCallback(window, mouse_callback);
-    glfwSetScrollCallback(window, scroll_callback);
+    glfwSetCursorPosCallback(window, MouseCallback);
 
-    /* Loop until the user closes the window */
+    float x = -5.0f;
+
+    for (int i = 0; i < 10; ++i)
+    {
+        x = i + (i * 0.25f);
+
+        m_Entities.push_back({ glm::vec3(x, 0.0f, 0.0f) });
+    }
+
+    float lastFrame = 0.0f;
+
     while (!glfwWindowShouldClose(window))
     {
-        Input();
+        float currentFrame = glfwGetTime();
 
-        OnRender();
+        deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
 
         glfwPollEvents();
+
+        Input();
+
+        Render();
     }
 
     glfwTerminate();
@@ -159,41 +163,44 @@ void Application::Input()
         glfwSetWindowShouldClose(window, true);
 
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        camera.ProcessKeyboard(CameraMovement::FORWARD, 0.1f);
+        camera.ProcessKeyboard(CameraMovement::FORWARD, deltaTime);
 
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        camera.ProcessKeyboard(CameraMovement::BACKWARD, 0.1f);
+        camera.ProcessKeyboard(CameraMovement::BACKWARD, deltaTime);
 
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        camera.ProcessKeyboard(CameraMovement::LEFT, 0.1f);
+        camera.ProcessKeyboard(CameraMovement::LEFT, deltaTime);
 
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        camera.ProcessKeyboard(CameraMovement::RIGHT, 0.1f);
+        camera.ProcessKeyboard(CameraMovement::RIGHT, deltaTime);
 
 }
 
-void Application::OnRender()
+void Application::Render()
 {
     m_Renderer.Clear();
 
-    Shader shader = m_Shaders[0];
+    Shader* shader = ResourceCache::GetShader("s_Basic");
+    Texture2D* texture = ResourceCache::GetTexture("t_Basic");
 
-    shader.Bind();
+    shader->Use();
 
-    glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)800 / (float)600, 0.1f, 100.0f);
+    texture->Bind();
 
-    shader.SetUniformMat4f("u_View", camera.GetViewMatrix());
+    shader->SetUniform1i("u_Texture", 0);
 
-    for (unsigned int i = 0; i < m_Objects.size(); ++i)
+    glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)800 / (float)600, 0.1f, 100.0f);
+
+    shader->SetUniformMat4f("u_View", camera.GetViewMatrix());
+
+    shader->SetUniformMat4f("u_Projection", projection);
+
+    for (Entity& entity : m_Entities)
     {
-        GameObject current = m_Objects[i];
+        shader->SetUniformMat4f("u_Model", entity.transform.GetModelMatrix());
 
-        shader.SetUniformMat4f("u_Projection", projection);
-
-        shader.SetUniformMat4f("u_Model", current.GetModelMatrix());
-        
-        m_Renderer.Draw(*m_VAO, *m_IBO, shader);
-    }
+        m_Renderer.DrawCube(m_VAO, shader);
+    }   
 
     glfwSwapBuffers(window);
 }
