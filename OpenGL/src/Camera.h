@@ -42,10 +42,12 @@ public:
     void ProcessMouseMovement(float xoffset, float yoffset);
 
 private:
+    float lastX = 800 / 2.0f;
+    float lastY = 600 / 2.0f;
+
+    bool firstMouse = true;
 
     glm::vec3 m_Position;
-
-    glm::vec3 m_PreviousPosition;
 
     CameraVectors m_Vectors;
 

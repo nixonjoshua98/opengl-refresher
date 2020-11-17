@@ -5,8 +5,8 @@
 
 #include <vector>
 
-#include "Renderer.h"
-#include "Entity.h"
+#include "Camera.h"
+#include "Block.h"
 
 #include "VertexArray.h"
 
@@ -19,12 +19,12 @@ public:
 
 	int Run();
 
+	Camera* camera;
+
 private:
 	GLFWwindow* window;
 
-	std::vector<Entity> m_Entities;
-
-	Renderer m_Renderer;
+	std::vector<Block> m_Entities;
 
 	VertexArray* m_VAO;	
 
@@ -34,10 +34,13 @@ private:
 
 	int CreateWindow();
 
-	void LoadResources();
+	void Setup();
 
 	void Input();
 
 	void Render();
+
+	static void MouseMovementCallback(GLFWwindow* window, double xPos, double yPos);
+	static void FrameBufferSizeCallback(GLFWwindow* window, int width, int height);
 };
 

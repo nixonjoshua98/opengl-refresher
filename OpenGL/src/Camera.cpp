@@ -1,15 +1,17 @@
 #include "Camera.h"
 
+#include <iostream>
+
 
 Camera::Camera(glm::vec3 position, glm::vec3 up)
 {
-    m_Position = m_PreviousPosition = position;
+    m_Position = position;
 
     m_Vectors.WorldUp = up;
 
     m_Vectors.Front = glm::vec3(0.0f, 0.0f, -1.0f);
 
-    MovementSpeed = 2.5f;
+    MovementSpeed = 5.0f;
 
     MouseSensitivity = 0.1f;
 
@@ -43,10 +45,20 @@ void Camera::ProcessKeyboard(CameraMovement direction, float deltaTime)
     }
 }
 
-void Camera::ProcessMouseMovement(float xOffset, float yOffset)
+void Camera::ProcessMouseMovement(float xPos, float yPos)
 {
-    xOffset *= MouseSensitivity;
-    yOffset *= MouseSensitivity;
+    if (firstMouse)
+    {
+        lastX = xPos;
+        lastY = yPos;
+        firstMouse = false;
+    }
+
+    float xOffset = (xPos - lastX) * MouseSensitivity;
+    float yOffset = (lastY - yPos) * MouseSensitivity;
+
+    lastX = xPos;
+    lastY = yPos;
 
     Yaw += xOffset;
     Pitch += yOffset;
