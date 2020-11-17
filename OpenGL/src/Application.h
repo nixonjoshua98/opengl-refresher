@@ -24,7 +24,7 @@ public:
 private:
 	GLFWwindow* window;
 
-	std::vector<Block> m_Entities;
+	std::vector<Block*> m_Entities;
 
 	VertexArray* m_VAO;	
 

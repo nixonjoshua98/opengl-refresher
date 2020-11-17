@@ -92,24 +92,25 @@ int Application::CreateWindow()
     return window ? 0 : -1;
 }
 
-
 void Application::Setup()
 {
     ResourceCache::LoadShader("s_Basic", "res/shaders/Shader.shader");
 
-    ResourceCache::LoadTexture("t_Basic", "res/textures/wall.jpg");
+    ResourceCache::LoadTexture("t_Basic", "res/textures/image.png");
 
     camera = new Camera(glm::vec3(0.0f, 0.0f, 3.0f));
 
-    m_Entities = std::vector<Block>();
+    m_Entities = std::vector<Block*>();
 
-    float x = -5.0f;
-
-    for (int i = 0; i < 10; ++i)
+    for (int x = 0; x < 8; x++)
     {
-        x = i + (i * 0.25f);
-
-        m_Entities.push_back({ glm::vec3(x, 0.0f, 0.0f) });
+        for (int y = 0; y < 8; y++)
+        {
+            for (int z = 0; z < 8; z++)
+            {
+                m_Entities.emplace_back(new Block{ glm::vec3(x, y, z - 16) });
+            }
+        }
     }
 
     glfwSetWindowUserPointer(window, this);
@@ -215,33 +216,20 @@ void Application::Input()
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         camera->ProcessKeyboard(CameraMovement::RIGHT, deltaTime);
 
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+    {
+
+    }
+
 }
 
 void Application::Render()
 {
-    Renderer::Clear();
-
-    Shader* shader = ResourceCache::GetShader("s_Basic");
-    Texture2D* texture = ResourceCache::GetTexture("t_Basic");
-
-    shader->Use();
-
-    texture->Bind();
-
-    shader->SetUniform1i("u_Texture", 0);
-
     glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)800 / (float)600, 0.1f, 100.0f);
 
-    shader->SetUniformMat4f("u_View", camera->GetViewMatrix());
+    Renderer::Clear();
 
-    shader->SetUniformMat4f("u_Projection", projection);
-
-    for (Block& entity : m_Entities)
-    {
-        shader->SetUniformMat4f("u_Model", entity.transform.GetModelMatrix());
-
-        Renderer::DrawCube(m_VAO, shader);
-    }   
+    Renderer::DrawEntities(m_Entities, m_VAO, projection, camera->GetViewMatrix());
 
     glfwSwapBuffers(window);
 }
